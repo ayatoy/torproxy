@@ -94,6 +94,9 @@ Options (fields in '[]' are optional, '<>' are required):
                 required args: \"<country>\" (IE, "US" or "DE")
                 <country> - country traffic should exit in
     -n          Generate new circuits now
+    -N \"<interval>\" Generate new circuits periodically
+                required args: \"<interval>\"
+                <interval> - number of seconds between periodic generate new circuits
     -p \"<password>\" Configure tor HashedControlPassword for control port
     -s \"<port>;<host:port>\" Configure tor hidden service
                 required args: \"<port>;<host:port>\"
@@ -105,13 +108,14 @@ The 'command' (if provided and valid) will be run instead of torproxy
     exit $RC
 }
 
-while getopts ":hb:el:np:s:" opt; do
+while getopts ":hb:el:nN:p:s:" opt; do
     case "$opt" in
         h) usage ;;
         b) bandwidth "$OPTARG" ;;
         e) exitnode ;;
         l) exitnode_country "$OPTARG" ;;
         n) newnym ;;
+        N) INTERVAL=$OPTARG ;;
         p) password "$OPTARG" ;;
         s) eval hidden_service $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         "?") echo "Unknown option: -$OPTARG"; usage 1 ;;
@@ -154,6 +158,7 @@ else
     [[ -e /srv/tor/hidden_service/hostname ]] && {
         echo -en "\nHidden service hostname: "
         cat /srv/tor/hidden_service/hostname; echo; }
+    [[ -n $INTERVAL ]] && (nohup sh -c "while sleep $INTERVAL; do torproxy.sh -n > /dev/null 2>&1; done" &)
     /usr/sbin/privoxy --user privoxy /etc/privoxy/config
     exec /usr/bin/tor
 fi
