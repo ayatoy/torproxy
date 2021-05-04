@@ -108,6 +108,9 @@ The 'command' (if provided and valid) will be run instead of torproxy
     exit $RC
 }
 
+# Default interval value to avoid nounset error
+INTERVAL=0
+
 while getopts ":hb:el:nN:p:s:" opt; do
     case "$opt" in
         h) usage ;;
@@ -158,7 +161,7 @@ else
     [[ -e /srv/tor/hidden_service/hostname ]] && {
         echo -en "\nHidden service hostname: "
         cat /srv/tor/hidden_service/hostname; echo; }
-    [[ -n $INTERVAL ]] && (nohup sh -c "while sleep $INTERVAL; do torproxy.sh -n > /dev/null 2>&1; done" &)
+    [[ $INTERVAL -gt 0 ]] && (nohup sh -c "while sleep $INTERVAL; do torproxy.sh -n > /dev/null 2>&1; done" &)
     /usr/sbin/privoxy --user privoxy /etc/privoxy/config
     exec /usr/bin/tor
 fi
